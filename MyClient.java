@@ -10,6 +10,7 @@ import java.util.*;
 
 public class MyClient extends JFrame {
 	private Container c;
+    private int player_number;
 	PrintWriter out;
 
     public MyClient() {
@@ -31,20 +32,53 @@ public class MyClient extends JFrame {
 		} catch (IOException e) {
 			 System.err.println("IOException: " + e);
 		}
-		
-        MesgRecvThread mrt = new MesgRecvThread(socket, game);
+        try {
+            InputStreamReader sisr = new InputStreamReader(socket.getInputStream());
+            BufferedReader br = new BufferedReader(sisr);
+            String num = br.readLine();
+            player_number = Integer.valueOf(num);
+            System.out.println("your player number is " + player_number);;
+        } catch (IOException e) {
+			System.err.println("IOException: " + e);
+        }
+        MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number);
+        FallPieceThread fpt = new FallPieceThread(game);
 		mrt.start();
+        fpt.start();
     }
 
+    // ミノを毎秒降下させるためのスレッド
+    public class FallPieceThread extends Thread {
+        Tetris game;
+
+        public FallPieceThread(Tetris g) {
+            game = g;
+        }
+
+        public void run() {
+            while (true) {
+                // Make the falling piece drop every second
+                try{
+                    Thread.sleep(1000);
+                    game.dropDown();
+                }catch (InterruptedException e){
+                    System.err.println("InterruptedException: " + e);
+                }
+            }
+        }
+    }
+
+    // サーバーからの入力に応じてテトリスを動かすスレッド
     public class MesgRecvThread extends Thread {
         Socket socket;
         Tetris game;
+        int num;
 		
-		public MesgRecvThread(Socket s, Tetris g){
+		public MesgRecvThread(Socket s, Tetris g, int number){
 			socket = s;
             game = g;
+            num = number;
 		}
-		
 		
 		public void run() {
 			try{
@@ -52,36 +86,51 @@ public class MyClient extends JFrame {
 				BufferedReader br = new BufferedReader(sisr);
 				out = new PrintWriter(socket.getOutputStream(), true);
 				while(true){
-					// Make the falling piece drop every second
-					try{
-						Thread.sleep(1000);
-						game.dropDown();
-					}catch (InterruptedException e){
-						System.err.println("InterruptedException: " + e);
-					}
-
 					String inputLine = br.readLine();
 					if(inputLine != null){
 						System.out.println("inputLine: " + inputLine);
-                        switch (inputLine) {
-                            case "w":
-                                game.rotate(-1);
-                                break;
-                            case "e":
-                                game.rotate(+1);
-                                break;
-                            case "a":
-                                game.move(-1);
-                                break;
-                            case "d":
-                                game.move(+1);
-                                break;
-                            case "s":
-                                int numClears = game.dropDown();
-                                game.score += 1;
-                                out.println(numClears);
-                                out.flush();
-                                break;
+                        if (num % 2 == 0) {
+                            switch (inputLine) {
+                                case "w" :
+                                    game.rotate(-1);
+                                    break;
+                                case "e":
+                                    game.rotate(+1);
+                                    break;
+                                case "a":
+                                    game.move(-1);
+                                    break;
+                                case "d":
+                                    game.move(+1);
+                                    break;
+                                case "s":
+                                    int numClears = game.dropDown();
+                                    game.score += 1;
+                                    out.println(numClears);
+                                    out.flush();
+                                    break;
+                            }
+                        } else {
+                            switch (inputLine) {
+                                case "i" :
+                                    game.rotate(-1);
+                                    break;
+                                case "o":
+                                    game.rotate(+1);
+                                    break;
+                                case "j":
+                                    game.move(-1);
+                                    break;
+                                case "l":
+                                    game.move(+1);
+                                    break;
+                                case "k":
+                                    int numClears = game.dropDown();
+                                    game.score += 1;
+                                    out.println(numClears);
+                                    out.flush();
+                                    break;
+                            }
                         }
 					}else{
 						break;

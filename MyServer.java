@@ -44,7 +44,7 @@ class ClientProcThread extends Thread{
 
 
 public class MyServer extends JFrame {
-    private static int maxConnection=2;
+    private static int maxConnection=100;
 	private static Socket[] incoming;
 	private static boolean[] flag;
 	private static InputStreamReader[] isr;
@@ -54,7 +54,6 @@ public class MyServer extends JFrame {
 	private static int member;
 
     public MyServer() {
-        System.out.println("test");
 		setTitle("Server");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocation(200, 200);
@@ -115,7 +114,8 @@ public class MyServer extends JFrame {
 				out[n] = new PrintWriter(incoming[n].getOutputStream(), true);
 				
 				myClientProcThread[n] = new ClientProcThread(n, incoming[n], isr[n], in[n], out[n]);
-				myClientProcThread[n] .start();
+				myClientProcThread[n].start();
+                out[n].println(String.valueOf(n));
 				member = n;
 				n++;
 			}
