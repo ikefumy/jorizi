@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.awt.Font;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -236,6 +237,13 @@ public class Tetris extends JPanel {
 		// Display the score
 		g.setColor(Color.WHITE);
 		g.drawString("" + score, 19*12, 25);
+		
+		if(collidesAt(5, 4, rotation)){
+		Font font1 = new Font("ＭＳ 明朝", Font.BOLD, 32);
+		g.setColor(Color.WHITE);
+		g.setFont(font1);
+		g.drawString("GAME OVER", 5*10, 300);
+		}
 		
 		// Draw the currently falling piece
 		drawPiece(g);
