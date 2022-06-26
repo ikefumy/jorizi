@@ -101,8 +101,9 @@ public class Tetris extends JPanel {
 	
 	// Put a new, random piece into the dropping position
 	public void newPiece() {
-		pieceOrigin = new Point(5, 2);
+		pieceOrigin = new Point(5, 2); // 落下地点
 		rotation = 0;
+		// ランダムに複数のミノを決定
 		if (nextPieces.isEmpty()) {
 			Collections.addAll(nextPieces, 0, 1, 2, 3, 4, 5, 6);
 			Collections.shuffle(nextPieces);
@@ -169,6 +170,28 @@ public class Tetris extends JPanel {
 		for (int j = row-1; j > 0; j--) {
 			for (int i = 1; i < 11; i++) {
 				well[i][j+1] = well[i][j];
+			}
+		}
+	}
+
+	// 指定した行数分ブロックを下から追加する
+	public void addRow(int numRow){
+		int blank = (int)Math.ceil(Math.random() * 10); // ブロックを置かない場所
+		for (int k = 0 ; k < numRow ; k++ ) {
+			// 全体的に一つ上にずらす
+			for (int j = 2; j <= 21; j++) {
+				for (int i = 1; i < 11; i++) {
+					well[i][j-1] = well[i][j];
+				}
+			}
+			// 一番下にブロック行を追加
+			for (int i = 1; i < 11; i++) {
+				if(i == blank){
+					well[i][21] = Color.BLACK;
+				}
+				else{
+					well[i][21] = Color.LIGHT_GRAY;
+				}
 			}
 		}
 	}
@@ -239,10 +262,10 @@ public class Tetris extends JPanel {
 		g.drawString("" + score, 19*12, 25);
 		
 		if(collidesAt(5, 4, rotation)){
-		Font font1 = new Font("ＭＳ 明朝", Font.BOLD, 32);
-		g.setColor(Color.WHITE);
-		g.setFont(font1);
-		g.drawString("GAME OVER", 5*10, 300);
+			Font font1 = new Font("ＭＳ 明朝", Font.BOLD, 32);
+			g.setColor(Color.WHITE);
+			g.setFont(font1);
+			g.drawString("GAME OVER", 5*10, 300);
 		}
 		
 		// Draw the currently falling piece

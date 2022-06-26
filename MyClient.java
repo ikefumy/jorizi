@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class MyClient extends JFrame {
 	private Container c;
@@ -60,7 +61,8 @@ public class MyClient extends JFrame {
                 // Make the falling piece drop every second
                 try{
                     Thread.sleep(1000);
-                    game.dropDown();
+                    int numClears = game.dropDown();
+                    out.println(numClears);
                 }catch (InterruptedException e){
                     System.err.println("InterruptedException: " + e);
                 }
@@ -88,48 +90,61 @@ public class MyClient extends JFrame {
 				while(true){
 					String inputLine = br.readLine();
 					if(inputLine != null){
-						System.out.println("inputLine: " + inputLine);
-                        if (num % 2 == 0) {
-                            switch (inputLine) {
-                                case "w" :
-                                    game.rotate(-1);
-                                    break;
-                                case "e":
-                                    game.rotate(+1);
-                                    break;
-                                case "a":
-                                    game.move(-1);
-                                    break;
-                                case "d":
-                                    game.move(+1);
-                                    break;
-                                case "s":
-                                    int numClears = game.dropDown();
-                                    game.score += 1;
-                                    out.println(numClears);
-                                    out.flush();
-                                    break;
+                        // inputLineが数字 -> その数分妨害ブロック行を追加
+                        if(checkString(inputLine)){
+                            try{
+                                int inputLineInt = Integer.parseInt(inputLine);
+                                game.addRow(inputLineInt);
                             }
-                        } else {
-                            switch (inputLine) {
-                                case "i" :
-                                    game.rotate(-1);
-                                    break;
-                                case "o":
-                                    game.rotate(+1);
-                                    break;
-                                case "j":
-                                    game.move(-1);
-                                    break;
-                                case "l":
-                                    game.move(+1);
-                                    break;
-                                case "k":
-                                    int numClears = game.dropDown();
-                                    game.score += 1;
-                                    out.println(numClears);
-                                    out.flush();
-                                    break;
+                            catch (NumberFormatException e){
+                                e.printStackTrace();
+                            }
+                        }
+                        // inputLineが文字列 -> キーボード入力に従ってミノを操作
+                        else{
+                            System.out.println("inputLine: " + inputLine);
+                            if (num % 2 == 0) {
+                                switch (inputLine) {
+                                    case "w" :
+                                        game.rotate(-1);
+                                        break;
+                                    case "e":
+                                        game.rotate(+1);
+                                        break;
+                                    case "a":
+                                        game.move(-1);
+                                        break;
+                                    case "d":
+                                        game.move(+1);
+                                        break;
+                                    case "s":
+                                        int numClears = game.dropDown();
+                                        game.score += 1;
+                                        out.println(numClears);
+                                        out.flush();
+                                        break;
+                                }
+                            } else {
+                                switch (inputLine) {
+                                    case "i" :
+                                        game.rotate(-1);
+                                        break;
+                                    case "o":
+                                        game.rotate(+1);
+                                        break;
+                                    case "j":
+                                        game.move(-1);
+                                        break;
+                                    case "l":
+                                        game.move(+1);
+                                        break;
+                                    case "k":
+                                        int numClears = game.dropDown();
+                                        game.score += 1;
+                                        out.println(numClears);
+                                        out.flush();
+                                        break;
+                                }
                             }
                         }
 					}else{
@@ -141,6 +156,14 @@ public class MyClient extends JFrame {
 			}catch (IOException e){
 				System.err.println("IOException: " + e);
 			}
+        }
+
+        // 文字列が数字であるか判定
+        public static boolean checkString(String str) {
+            boolean res = true;
+            Pattern pattern = Pattern.compile("^[0-9]+$|-[0-9]+$");
+            res = pattern.matcher(str).matches();
+            return res;
         }
     }
 

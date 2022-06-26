@@ -4,6 +4,7 @@ import java.net.*;
 import javax.swing.JFrame;
 import java.awt.Container;
 import java.awt.event.*;
+import java.util.regex.Pattern;
 
 class ClientProcThread extends Thread{
     private int number;
@@ -31,7 +32,13 @@ class ClientProcThread extends Thread{
 						myOut.println("Good bye!");
 						break;
 					}
-					MyServer.SendAll(str);
+					// strが数字の場合（削除した列数）はもう一方の相手にだけ送信する
+					if(checkString(str)){
+						MyServer.SendOther(str, number);
+					}
+					else{
+						MyServer.SendAll(str);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -39,6 +46,14 @@ class ClientProcThread extends Thread{
 			System.out.println("Disconnect from client No." + number);
 			MyServer.SetFlag(number, false);
 		}
+	}
+
+	// 文字列が数字であるか判定
+	public static boolean checkString(String str) {
+		boolean res = true;
+		Pattern pattern = Pattern.compile("^[0-9]+$|-[0-9]+$");
+		res = pattern.matcher(str).matches();
+		return res;
 	}
 }
 
@@ -77,6 +92,17 @@ public class MyServer extends JFrame {
     public static void SendAll(String str){
 		for(int i = 1 ; i <= member ; i++){
 			if(flag[i] == true){
+				out[i].println(str);
+				out[i].flush();
+				System.out.println("Send messages to client No." + i);
+			}
+		}	
+	}
+
+	// 指定したクライアント以外に送信
+	public static void SendOther(String str, int number){
+		for(int i = 1 ; i <= member ; i++){
+			if(flag[i] == true && i != number){
 				out[i].println(str);
 				out[i].flush();
 				System.out.println("Send messages to client No." + i);
