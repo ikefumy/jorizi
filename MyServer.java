@@ -1,8 +1,11 @@
 import java.io.*;
 import java.net.*;
-
+import javax.swing.*;
 import javax.swing.JFrame;
+import javax.swing.JButton;
+import javax.swing.JPanel;
 import java.awt.Container;
+import java.awt.BorderLayout;
 import java.awt.event.*;
 import java.util.regex.Pattern;
 
@@ -26,8 +29,9 @@ class ClientProcThread extends Thread{
 			myOut.println("Hello, client No." + number + "! Enter 'Bye' to exit.");
 			while (true) {
 				String str = myIn.readLine();
-				System.out.println("Received from client No." + number + " Messages: " + str);
+				
 				if (str != null) {
+					System.out.println("Received from client No." + number + " Messages: " + str);
 					if (str.toUpperCase().equals("BYE")) {
 						myOut.println("Good bye!");
 						break;
@@ -58,7 +62,7 @@ class ClientProcThread extends Thread{
 }
 
 
-public class MyServer extends JFrame {
+public class MyServer extends JFrame implements ActionListener, KeyListener {
     private static int maxConnection=100;
 	private static Socket[] incoming;
 	private static boolean[] flag;
@@ -67,6 +71,7 @@ public class MyServer extends JFrame {
 	private static PrintWriter[] out;
 	private static ClientProcThread[] myClientProcThread;
 	private static int member;
+	// JLabel label;
 
     public MyServer() {
 		setTitle("Server");
@@ -74,19 +79,44 @@ public class MyServer extends JFrame {
 		setLocation(200, 200);
 		setSize(12*26+10, 26*23+25);
 
-        addKeyListener(new KeyListener() {
-			public void keyTyped(KeyEvent e1) {
-                SendAll(String.valueOf(e1.getKeyChar()));
-                System.out.println(e1.getKeyChar());
-			}
-			
-			public void keyPressed(KeyEvent e1) {
-			}
-			
-			public void keyReleased(KeyEvent e1) {
-			}
-		});
+		// STARTボタンの表示
+		// label = new JLabel("");
+		JButton btn = new JButton("START");
+		btn.addActionListener(this);
+		JPanel p = new JPanel();
+		p.add(btn);
+		// p.add(label);
+		Container contentPane = getContentPane();
+    	contentPane.add(p, BorderLayout.CENTER);
+		
+		// キーボード入力
+		addKeyListener(this);
+        
     }
+	// キーボード入力があったとき
+	@Override
+	public void keyTyped(KeyEvent e1) {
+		SendAll(String.valueOf(e1.getKeyChar()));
+		System.out.println(e1.getKeyChar());
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e1) {
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e1) {
+	}
+
+	// STARTボタンが押されたとき
+	@Override
+	public void actionPerformed(ActionEvent e){
+		// label.setText("Push");
+		// スタートボタンが押されたら全クライアントのゲームを同時に開始
+		SendAll("start");
+		// フォーカスをボタンからキーボードに変更
+		this.requestFocus();
+	}
 
 
     public static void SendAll(String str){
@@ -129,7 +159,6 @@ public class MyServer extends JFrame {
 		try {
             ServerSocket server = new ServerSocket(10000);
             System.out.println("The server has launched!");
-            
 			while (true) {
 				incoming[n] = server.accept();
 				flag[n] = true;
@@ -141,7 +170,7 @@ public class MyServer extends JFrame {
 				
 				myClientProcThread[n] = new ClientProcThread(n, incoming[n], isr[n], in[n], out[n]);
 				myClientProcThread[n].start();
-                out[n].println(String.valueOf(n));
+				out[n].println(String.valueOf(n));
 				member = n;
 				n++;
 			}

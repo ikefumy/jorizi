@@ -244,6 +244,14 @@ public class Tetris extends JPanel {
 					   25, 25);
 		}
 	}
+
+	// true: ゲーム終了
+	private boolean gameOver = false;
+	
+	// ゲーム終了か判定
+	public boolean isGameOver(){
+		return gameOver;
+	}
 	
 	@Override 
 	public void paintComponent(Graphics g)
@@ -266,6 +274,7 @@ public class Tetris extends JPanel {
 			g.setColor(Color.WHITE);
 			g.setFont(font1);
 			g.drawString("GAME OVER", 5*10, 300);
+			gameOver = true;
 		}
 		
 		// Draw the currently falling piece

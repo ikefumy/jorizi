@@ -13,6 +13,8 @@ public class MyClient extends JFrame {
 	private Container c;
     private int player_number;
 	PrintWriter out;
+    private boolean gameStart = false;
+    private boolean gameEnd = false;
 
     public MyClient() {
 		setTitle("Player");
@@ -24,6 +26,7 @@ public class MyClient extends JFrame {
 		Tetris game = new Tetris();
 		game.init();
 		c.add(game);
+        // game.newPiece();
 
         Socket socket = null;
         try {
@@ -38,7 +41,7 @@ public class MyClient extends JFrame {
             BufferedReader br = new BufferedReader(sisr);
             String num = br.readLine();
             player_number = Integer.valueOf(num);
-            System.out.println("your player number is " + player_number);;
+            System.out.println("your player number is " + player_number);
         } catch (IOException e) {
 			System.err.println("IOException: " + e);
         }
@@ -58,13 +61,20 @@ public class MyClient extends JFrame {
 
         public void run() {
             while (true) {
-                // Make the falling piece drop every second
-                try{
-                    Thread.sleep(1000);
-                    int numClears = game.dropDown();
-                    out.println(numClears);
-                }catch (InterruptedException e){
-                    System.err.println("InterruptedException: " + e);
+                boolean flag = gameStart && !gameEnd;
+                if(flag){
+                    // Make the falling piece drop every second
+                    try{
+                        Thread.sleep(1000);
+                        int numClears = game.dropDown();
+                        out.println(numClears);
+                        // ゲームオーバーしたらサーバに知らせる
+                        if(game.isGameOver()){
+                            out.println("end");
+                        }
+                    }catch (InterruptedException e){
+                        System.err.println("InterruptedException: " + e);
+                    }
                 }
             }
         }
@@ -89,68 +99,79 @@ public class MyClient extends JFrame {
 				out = new PrintWriter(socket.getOutputStream(), true);
 				while(true){
 					String inputLine = br.readLine();
-					if(inputLine != null){
-                        // inputLineが数字 -> その数分妨害ブロック行を追加
-                        if(checkString(inputLine)){
-                            try{
-                                int inputLineInt = Integer.parseInt(inputLine);
-                                game.addRow(inputLineInt);
-                            }
-                            catch (NumberFormatException e){
-                                e.printStackTrace();
-                            }
+                    String startStr = "start";
+                    String endStr = "end";
+                    if(inputLine != null){
+                        if(startStr.equals(inputLine)){
+                            gameStart = true;
                         }
-                        // inputLineが文字列 -> キーボード入力に従ってミノを操作
-                        else{
-                            System.out.println("inputLine: " + inputLine);
-                            if (num % 2 == 0) {
-                                switch (inputLine) {
-                                    case "w" :
-                                        game.rotate(-1);
-                                        break;
-                                    case "e":
-                                        game.rotate(+1);
-                                        break;
-                                    case "a":
-                                        game.move(-1);
-                                        break;
-                                    case "d":
-                                        game.move(+1);
-                                        break;
-                                    case "s":
-                                        int numClears = game.dropDown();
-                                        game.score += 1;
-                                        out.println(numClears);
-                                        out.flush();
-                                        break;
+                        else if(endStr.equals(inputLine)){
+                            gameEnd = true;
+                            break;
+                        }
+                        else if(gameStart && !gameEnd){
+                            // inputLineが数字 -> その数分妨害ブロック行を追加
+                            if(checkString(inputLine)){
+                                try{
+                                    int inputLineInt = Integer.parseInt(inputLine);
+                                    game.addRow(inputLineInt);
                                 }
-                            } else {
-                                switch (inputLine) {
-                                    case "i" :
-                                        game.rotate(-1);
-                                        break;
-                                    case "o":
-                                        game.rotate(+1);
-                                        break;
-                                    case "j":
-                                        game.move(-1);
-                                        break;
-                                    case "l":
-                                        game.move(+1);
-                                        break;
-                                    case "k":
-                                        int numClears = game.dropDown();
-                                        game.score += 1;
-                                        out.println(numClears);
-                                        out.flush();
-                                        break;
+                                catch (NumberFormatException e){
+                                    e.printStackTrace();
                                 }
                             }
+                            // inputLineが文字列 -> キーボード入力に従ってミノを操作
+                            else{
+                                System.out.println("inputLine: " + inputLine);
+                                if (num % 2 == 0) {
+                                    switch (inputLine) {
+                                        case "w" :
+                                            game.rotate(-1);
+                                            break;
+                                        case "e":
+                                            game.rotate(+1);
+                                            break;
+                                        case "a":
+                                            game.move(-1);
+                                            break;
+                                        case "d":
+                                            game.move(+1);
+                                            break;
+                                        case "s":
+                                            int numClears = game.dropDown();
+                                            game.score += 1;
+                                            out.println(numClears);
+                                            out.flush();
+                                            break;
+                                    }
+                                } else {
+                                    switch (inputLine) {
+                                        case "i" :
+                                            game.rotate(-1);
+                                            break;
+                                        case "o":
+                                            game.rotate(+1);
+                                            break;
+                                        case "j":
+                                            game.move(-1);
+                                            break;
+                                        case "l":
+                                            game.move(+1);
+                                            break;
+                                        case "k":
+                                            int numClears = game.dropDown();
+                                            game.score += 1;
+                                            out.println(numClears);
+                                            out.flush();
+                                            break;
+                                    }
+                                }
+                            }
                         }
-					}else{
-						break;
-					}
-					
+                    }
+                    else{
+                        break;
+                    }					
 				}
 				socket.close();
 			}catch (IOException e){
