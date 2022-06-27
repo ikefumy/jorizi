@@ -45,11 +45,29 @@ public class MyClient extends JFrame {
         } catch (IOException e) {
 			System.err.println("IOException: " + e);
         }
+        CheckGameOver cgo = new CheckGameOver(game);
         MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number);
         FallPieceThread fpt = new FallPieceThread(game);
-		mrt.start();
+        cgo.start();
+        mrt.start();
         fpt.start();
     }
+
+    public class CheckGameOver extends Thread {
+        Tetris game;
+        public CheckGameOver(Tetris g) {
+            game = g;
+        }
+
+        public void run() {
+            while (true) {
+                if ((game.isGameOver())) {
+                    out.println("end");
+                }
+            }
+        }
+    }
+
 
     // ミノを毎秒降下させるためのスレッド
     public class FallPieceThread extends Thread {
@@ -68,10 +86,6 @@ public class MyClient extends JFrame {
                         Thread.sleep(1000);
                         int numClears = game.dropDown();
                         out.println(numClears);
-                        // ゲームオーバーしたらサーバに知らせる
-                        if(game.isGameOver()){
-                            out.println("end");
-                        }
                     }catch (InterruptedException e){
                         System.err.println("InterruptedException: " + e);
                     }
