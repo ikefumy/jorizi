@@ -1,13 +1,10 @@
 import java.io.*;
 import java.net.*;
-
 import javax.swing.*;
-import java.lang.*;
 import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.util.*;
 import java.util.regex.Pattern;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MyClient extends JFrame {
 	private Container c;
@@ -26,7 +23,6 @@ public class MyClient extends JFrame {
 		Tetris game = new Tetris();
 		game.init();
 		c.add(game);
-        // game.newPiece();
 
         Socket socket = null;
         try {
@@ -45,12 +41,13 @@ public class MyClient extends JFrame {
         } catch (IOException e) {
 			System.err.println("IOException: " + e);
         }
+
         CheckGameOver cgo = new CheckGameOver(game);
-        MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number);
-        FallPieceThread fpt = new FallPieceThread(game);
+        FallPieceThread fpt = new FallPieceThread(game, 1000);
+        MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number, fpt);
         cgo.start();
-        mrt.start();
         fpt.start();
+        mrt.start();
     }
 
     public class CheckGameOver extends Thread {
@@ -72,18 +69,21 @@ public class MyClient extends JFrame {
     // ミノを毎秒降下させるためのスレッド
     public class FallPieceThread extends Thread {
         Tetris game;
+        int dropInterval;
+        private boolean running = true;
 
-        public FallPieceThread(Tetris g) {
+        public FallPieceThread(Tetris g, int interval) {
             game = g;
+            dropInterval = interval;
         }
 
         public void run() {
-            while (true) {
+            while (running) {
                 boolean flag = gameStart && !gameEnd;
                 if(flag){
                     // Make the falling piece drop every second
                     try{
-                        Thread.sleep(1000);
+                        Thread.sleep(dropInterval);
                         int numClears = game.dropDown();
                         out.println(numClears);
                     }catch (InterruptedException e){
@@ -92,6 +92,10 @@ public class MyClient extends JFrame {
                 }
             }
         }
+
+        public void stopRunning() {
+            running = false;
+        }
     }
 
     // サーバーからの入力に応じてテトリスを動かすスレッド
@@ -99,11 +103,15 @@ public class MyClient extends JFrame {
         Socket socket;
         Tetris game;
         int num;
+        FallPieceThread fpt;
+		boolean fevermode1 = true;
+		boolean fevermode2 = true;
 		
-		public MesgRecvThread(Socket s, Tetris g, int number){
+		public MesgRecvThread(Socket s, Tetris g, int number, FallPieceThread f){
 			socket = s;
             game = g;
             num = number;
+            fpt = f;
 		}
 		
 		public void run() {
@@ -111,19 +119,18 @@ public class MyClient extends JFrame {
 				InputStreamReader sisr = new InputStreamReader(socket.getInputStream());
 				BufferedReader br = new BufferedReader(sisr);
 				out = new PrintWriter(socket.getOutputStream(), true);
-				while(true){
+                while(true){
 					String inputLine = br.readLine();
                     String startStr = "start";
                     String endStr = "end";
-                    if(inputLine != null){
+					if(inputLine != null){
                         if(startStr.equals(inputLine)){
                             gameStart = true;
                         }
                         else if(endStr.equals(inputLine)){
                             gameEnd = true;
                             break;
-                        }
-                        else if(gameStart && !gameEnd){
+                        } else if (gameStart && !gameEnd) {
                             // inputLineが数字 -> その数分妨害ブロック行を追加
                             if(checkString(inputLine)){
                                 try{
@@ -157,6 +164,23 @@ public class MyClient extends JFrame {
                                             out.println(numClears);
                                             out.flush();
                                             break;
+                                        case "u":
+                                            if(fevermode2){
+                                                fpt.stopRunning();
+                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
+                                                fpt1.start();
+                                                fevermode2 = false;
+                                                TimerTask task = new TimerTask() {
+                                                    public void run(){
+                                                        fpt1.stopRunning();
+                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+                                                        fpt2.start();
+                                                    }
+                                                };
+                                                Timer timer = new Timer();
+                                                timer.schedule(task, 30000);
+                                            }
+                                            break;
                                     }
                                 } else {
                                     switch (inputLine) {
@@ -178,16 +202,31 @@ public class MyClient extends JFrame {
                                             out.println(numClears);
                                             out.flush();
                                             break;
+                                        case "q":
+                                            if(fevermode1){
+                                                fpt.stopRunning();
+                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
+                                                fpt1.start();
+                                                fevermode1 = false;
+                                                
+                                                TimerTask task = new TimerTask() {
+                                                    public void run(){
+                                                        fpt1.stopRunning();
+                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+                                                        fpt2.start();
+                                                    }
+                                                };
+                                                Timer timer = new Timer();
+                                                timer.schedule(task, 30000);
+                                            }
+                                            break;
                                     }
                                 }
                             }
                         }
                     }
-                    else{
-                        break;
-                    }					
 				}
-				socket.close();
+                socket.close();
 			}catch (IOException e){
 				System.err.println("IOException: " + e);
 			}
@@ -208,7 +247,3 @@ public class MyClient extends JFrame {
     }
     
 }
-
-
-
-

@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import javax.swing.*;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -11,8 +10,6 @@ import java.util.regex.Pattern;
 
 class ClientProcThread extends Thread{
     private int number;
-	private Socket incoming;
-	private InputStreamReader myIsr;
 	private BufferedReader myIn;
 	private PrintWriter myOut;
 
@@ -63,7 +60,7 @@ class ClientProcThread extends Thread{
 
 
 public class MyServer extends JFrame implements ActionListener, KeyListener {
-    private static int maxConnection=100;
+  private static int maxConnection=100;
 	private static Socket[] incoming;
 	private static boolean[] flag;
 	private static InputStreamReader[] isr;
@@ -111,13 +108,11 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
 	// STARTボタンが押されたとき
 	@Override
 	public void actionPerformed(ActionEvent e){
-		// label.setText("Push");
 		// スタートボタンが押されたら全クライアントのゲームを同時に開始
 		SendAll("start");
 		// フォーカスをボタンからキーボードに変更
 		this.requestFocus();
 	}
-
 
     public static void SendAll(String str){
 		for(int i = 1 ; i <= member ; i++){
@@ -135,7 +130,7 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
 			if(flag[i] == true && i != number){
 				out[i].println(str);
 				out[i].flush();
-				System.out.println("Send messages to client No." + i);
+				System.out.println("other Send messages to client No." + i);
 			}
 		}	
 	}

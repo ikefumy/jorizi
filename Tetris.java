@@ -1,13 +1,9 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Font;
-
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Tetris extends JPanel {
