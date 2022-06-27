@@ -107,7 +107,7 @@ public class MyClient extends JFrame {
 		boolean fevermode1 = true;
 		boolean fevermode2 = true;
 		
-		public MesgRecvThread(Socket s, Tetris g, int number,FallPieceThread f){
+		public MesgRecvThread(Socket s, Tetris g, int number, FallPieceThread f){
 			socket = s;
             game = g;
             num = number;
@@ -119,7 +119,7 @@ public class MyClient extends JFrame {
 				InputStreamReader sisr = new InputStreamReader(socket.getInputStream());
 				BufferedReader br = new BufferedReader(sisr);
 				out = new PrintWriter(socket.getOutputStream(), true);
-				while(true){
+                while(true){
 					String inputLine = br.readLine();
                     String startStr = "start";
                     String endStr = "end";
@@ -180,6 +180,7 @@ public class MyClient extends JFrame {
                                                 Timer timer = new Timer();
                                                 timer.schedule(task, 30000);
                                             }
+                                            break;
                                     }
                                 } else {
                                     switch (inputLine) {
@@ -218,15 +219,14 @@ public class MyClient extends JFrame {
                                                 Timer timer = new Timer();
                                                 timer.schedule(task, 30000);
                                             }
+                                            break;
                                     }
                                 }
                             }
-                        }else{
-                            break;
                         }
                     }
 				}
-				socket.close();
+                socket.close();
 			}catch (IOException e){
 				System.err.println("IOException: " + e);
 			}

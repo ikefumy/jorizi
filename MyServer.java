@@ -10,8 +10,6 @@ import java.util.regex.Pattern;
 
 class ClientProcThread extends Thread{
     private int number;
-	private Socket incoming;
-	private InputStreamReader myIsr;
 	private BufferedReader myIn;
 	private PrintWriter myOut;
 
