@@ -27,7 +27,7 @@ public class MyClient extends JFrame {
 
         Socket socket = null;
         try {
-			socket = new Socket("192.168.0.162", 8080);//サーバー側のPCのIPアドレス
+			socket = new Socket("192.168.0.162", 8080);//サーバー側のPCのIPアドレスを使う
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
