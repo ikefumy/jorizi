@@ -155,7 +155,7 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
         
 		try {
             ServerSocket server = new ServerSocket();
-			server.bind(new InetSocketAddress("192.168.0.162", 8080));
+	    server.bind(new InetSocketAddress("192.168.0.162", 8080));//サーバー側のPCのIPアドレス
             System.out.println("The server has launched!");
 			while (true) {
 				incoming[n] = server.accept();
