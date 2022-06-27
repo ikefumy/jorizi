@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.awt.Font;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -88,8 +89,10 @@ public class Tetris extends JPanel {
 		well = new Color[12][24];
 		for (int i = 0; i < 12; i++) {
 			for (int j = 0; j < 23; j++) {
-				if (i == 0 || i == 11 || j == 22) {
+	            if (i == 0 || i == 11 || j == 22) {
 					well[i][j] = Color.GRAY;
+				}else if(j == 3){
+					well[i][j] = Color.MAGENTA;
 				} else {
 					well[i][j] = Color.BLACK;
 				}
@@ -100,8 +103,9 @@ public class Tetris extends JPanel {
 	
 	// Put a new, random piece into the dropping position
 	public void newPiece() {
-		pieceOrigin = new Point(5, 2);
+		pieceOrigin = new Point(5, 0); // 落下地点
 		rotation = 0;
+		// ランダムに複数のミノを決定
 		if (nextPieces.isEmpty()) {
 			Collections.addAll(nextPieces, 0, 1, 2, 3, 4, 5, 6);
 			Collections.shuffle(nextPieces);
@@ -113,7 +117,7 @@ public class Tetris extends JPanel {
 	// Collision test for the dropping piece
 	public boolean collidesAt(int x, int y, int rotation) {
 		for (Point p : Tetraminos[currentPiece][rotation]) {
-			if (well[p.x + x][p.y + y] != Color.BLACK) {
+			if (well[p.x + x][p.y + y] != Color.BLACK && well[p.x + x][p.y + y] != Color.MAGENTA ) {
 				return true;
 			}
 		}
@@ -171,6 +175,28 @@ public class Tetris extends JPanel {
 			}
 		}
 	}
+
+	// 指定した行数分ブロックを下から追加する
+	public void addRow(int numRow){
+		int blank = (int)Math.ceil(Math.random() * 10); // ブロックを置かない場所
+		for (int k = 0 ; k < numRow ; k++ ) {
+			// 全体的に一つ上にずらす
+			for (int j = 2; j <= 21; j++) {
+				for (int i = 1; i < 11; i++) {
+					well[i][j-1] = well[i][j];
+				}
+			}
+			// 一番下にブロック行を追加
+			for (int i = 1; i < 11; i++) {
+				if(i == blank){
+					well[i][21] = Color.BLACK;
+				}
+				else{
+					well[i][21] = Color.LIGHT_GRAY;
+				}
+			}
+		}
+	}
 	
 	// Clear completed rows from the field and award score according to
 	// the number of simultaneously cleared rows.
@@ -181,7 +207,7 @@ public class Tetris extends JPanel {
 		for (int j = 21; j > 0; j--) {
 			gap = false;
 			for (int i = 1; i < 11; i++) {
-				if (well[i][j] == Color.BLACK) {
+				if (well[i][j] == Color.BLACK || well[i][j] == Color.MAGENTA) {
 					gap = true;
 					break;
 				}
@@ -220,6 +246,14 @@ public class Tetris extends JPanel {
 					   25, 25);
 		}
 	}
+
+	// true: ゲーム終了
+	private boolean gameOver = false;
+	
+	// ゲーム終了か判定
+	public boolean isGameOver(){
+		return gameOver;
+	}
 	
 	@Override 
 	public void paintComponent(Graphics g)
@@ -236,6 +270,14 @@ public class Tetris extends JPanel {
 		// Display the score
 		g.setColor(Color.WHITE);
 		g.drawString("" + score, 19*12, 25);
+		
+		if(collidesAt(5, 4, rotation)){
+			Font font1 = new Font("ＭＳ 明朝", Font.BOLD, 32);
+			g.setColor(Color.WHITE);
+			g.setFont(font1);
+			g.drawString("GAME OVER", 5*10, 300);
+			gameOver = true;
+		}
 		
 		// Draw the currently falling piece
 		drawPiece(g);

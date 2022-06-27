@@ -4,17 +4,14 @@ import java.net.*;
 import javax.swing.*;
 import java.lang.*;
 import java.awt.*;
-import java.awt.Graphics;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MyClient extends JFrame {
 	private Container c;
     private int player_number;
 	PrintWriter out;
-	public static FallPieceThread fpt;
+    private boolean gameStart = false;
+    private boolean gameEnd = false;
 
     public MyClient() {
 		setTitle("Player");
@@ -40,43 +37,57 @@ public class MyClient extends JFrame {
             BufferedReader br = new BufferedReader(sisr);
             String num = br.readLine();
             player_number = Integer.valueOf(num);
-            System.out.println("your player number is " + player_number);;
+            System.out.println("your player number is " + player_number);
         } catch (IOException e) {
 			System.err.println("IOException: " + e);
         }
+        CheckGameOver cgo = new CheckGameOver(game);
         MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number);
-        fpt = new FallPieceThread(game, 1000);
-		mrt.start();
+        FallPieceThread fpt = new FallPieceThread(game);
+        cgo.start();
+        mrt.start();
         fpt.start();
     }
+
+    public class CheckGameOver extends Thread {
+        Tetris game;
+        public CheckGameOver(Tetris g) {
+            game = g;
+        }
+
+        public void run() {
+            while (true) {
+                if ((game.isGameOver())) {
+                    out.println("end");
+                }
+            }
+        }
+    }
+
 
     // ミノを毎秒降下させるためのスレッド
     public class FallPieceThread extends Thread {
         Tetris game;
-		int dropInterval;
-		private boolean running = true;
 
-        public FallPieceThread(Tetris g, int interval) {
+        public FallPieceThread(Tetris g) {
             game = g;
-			dropInterval = interval;
         }
 
         public void run() {
-            while (running) {
-                // Make the falling piece drop every second
-                try{
-                    Thread.sleep(dropInterval);
-                    int numClears = game.dropDown();
-                    out.println(numClears);
-                }catch (InterruptedException e){
-                    System.err.println("InterruptedException: " + e);
+            while (true) {
+                boolean flag = gameStart && !gameEnd;
+                if(flag){
+                    // Make the falling piece drop every second
+                    try{
+                        Thread.sleep(1000);
+                        int numClears = game.dropDown();
+                        out.println(numClears);
+                    }catch (InterruptedException e){
+                        System.err.println("InterruptedException: " + e);
+                    }
                 }
             }
         }
-
-		public void stopRunning(){
-			running = false;
-		}
     }
 
     // サーバーからの入力に応じてテトリスを動かすスレッド
@@ -86,7 +97,6 @@ public class MyClient extends JFrame {
         int num;
 		boolean fevermode1 = true;
 		boolean fevermode2 = true;
-
 		
 		public MesgRecvThread(Socket s, Tetris g, int number){
 			socket = s;
@@ -199,7 +209,6 @@ public class MyClient extends JFrame {
 					}else{
 						break;
 					}
-					
 				}
 				socket.close();
 			}catch (IOException e){
@@ -222,6 +231,3 @@ public class MyClient extends JFrame {
     }
     
 }
-
-
-
