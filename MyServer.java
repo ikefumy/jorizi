@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import javax.swing.*;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -111,7 +110,6 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
 	// STARTボタンが押されたとき
 	@Override
 	public void actionPerformed(ActionEvent e){
-		// label.setText("Push");
 		// スタートボタンが押されたら全クライアントのゲームを同時に開始
 		SendAll("start");
 		// フォーカスをボタンからキーボードに変更
@@ -134,7 +132,7 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
 			if(flag[i] == true && i != number){
 				out[i].println(str);
 				out[i].flush();
-				System.out.println("Send messages to client No." + i);
+				System.out.println("other Send messages to client No." + i);
 			}
 		}	
 	}
