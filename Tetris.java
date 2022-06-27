@@ -5,15 +5,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.awt.Font;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Tetris extends JPanel {
 
-	private static final long serialVersionUID = -8715353373678321308L;
+	public static long serialVersionUID = -8715353373678321308L;
 
-	private final Point[][][] Tetraminos = {
+	public Point[][][] Tetraminos = {
 			// I-Piece
 			{
 				{ new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(3, 1) },
@@ -71,25 +72,27 @@ public class Tetris extends JPanel {
 			}
 	};
 	
-	private final Color[] tetraminoColors = {
+	public Color[] tetraminoColors = {
 		Color.cyan, Color.blue, Color.orange, Color.yellow, Color.green, Color.pink, Color.red
 	};
 	
-	private Point pieceOrigin;
-	private int currentPiece;
-	private int rotation;
-	private ArrayList<Integer> nextPieces = new ArrayList<Integer>();
+	public Point pieceOrigin;
+	public int currentPiece;
+	public int rotation;
+	public ArrayList<Integer> nextPieces = new ArrayList<Integer>();
 
-	private long score;
-	private Color[][] well;
+	public long score;
+	public Color[][] well;
 	
 	// Creates a border around the well and initializes the dropping piece
-	private void init() {
+	public void init() {
 		well = new Color[12][24];
 		for (int i = 0; i < 12; i++) {
 			for (int j = 0; j < 23; j++) {
-				if (i == 0 || i == 11 || j == 22) {
+	            if (i == 0 || i == 11 || j == 22) {
 					well[i][j] = Color.GRAY;
+				}else if(j == 3){
+					well[i][j] = Color.MAGENTA;
 				} else {
 					well[i][j] = Color.BLACK;
 				}
@@ -100,8 +103,9 @@ public class Tetris extends JPanel {
 	
 	// Put a new, random piece into the dropping position
 	public void newPiece() {
-		pieceOrigin = new Point(5, 2);
+		pieceOrigin = new Point(5, 0); // 落下地点
 		rotation = 0;
+		// ランダムに複数のミノを決定
 		if (nextPieces.isEmpty()) {
 			Collections.addAll(nextPieces, 0, 1, 2, 3, 4, 5, 6);
 			Collections.shuffle(nextPieces);
@@ -111,9 +115,9 @@ public class Tetris extends JPanel {
 	}
 	
 	// Collision test for the dropping piece
-	private boolean collidesAt(int x, int y, int rotation) {
+	public boolean collidesAt(int x, int y, int rotation) {
 		for (Point p : Tetraminos[currentPiece][rotation]) {
-			if (well[p.x + x][p.y + y] != Color.BLACK) {
+			if (well[p.x + x][p.y + y] != Color.BLACK && well[p.x + x][p.y + y] != Color.MAGENTA ) {
 				return true;
 			}
 		}
@@ -141,23 +145,27 @@ public class Tetris extends JPanel {
 	}
 	
 	// Drops the piece one line or fixes it to the well if it can't drop
-	public void dropDown() {
+	public int dropDown() {
 		if (!collidesAt(pieceOrigin.x, pieceOrigin.y + 1, rotation)) {
 			pieceOrigin.y += 1;
 		} else {
-			fixToWell();
+			int numClears = fixToWell();
+			return numClears;
 		}	
 		repaint();
+		return 0;
 	}
 	
 	// Make the dropping piece part of the well, so it is available for
 	// collision detection.
-	public void fixToWell() {
+	public int fixToWell() {
 		for (Point p : Tetraminos[currentPiece][rotation]) {
 			well[pieceOrigin.x + p.x][pieceOrigin.y + p.y] = tetraminoColors[currentPiece];
 		}
-		clearRows();
+		int numClears = clearRows();
 		newPiece();
+
+		return numClears;
 	}
 	
 	public void deleteRow(int row) {
@@ -167,17 +175,39 @@ public class Tetris extends JPanel {
 			}
 		}
 	}
+
+	// 指定した行数分ブロックを下から追加する
+	public void addRow(int numRow){
+		int blank = (int)Math.ceil(Math.random() * 10); // ブロックを置かない場所
+		for (int k = 0 ; k < numRow ; k++ ) {
+			// 全体的に一つ上にずらす
+			for (int j = 2; j <= 21; j++) {
+				for (int i = 1; i < 11; i++) {
+					well[i][j-1] = well[i][j];
+				}
+			}
+			// 一番下にブロック行を追加
+			for (int i = 1; i < 11; i++) {
+				if(i == blank){
+					well[i][21] = Color.BLACK;
+				}
+				else{
+					well[i][21] = Color.LIGHT_GRAY;
+				}
+			}
+		}
+	}
 	
 	// Clear completed rows from the field and award score according to
 	// the number of simultaneously cleared rows.
-	public void clearRows() {
+	public int clearRows() {
 		boolean gap;
 		int numClears = 0;
 		
 		for (int j = 21; j > 0; j--) {
 			gap = false;
 			for (int i = 1; i < 11; i++) {
-				if (well[i][j] == Color.BLACK) {
+				if (well[i][j] == Color.BLACK || well[i][j] == Color.MAGENTA) {
 					gap = true;
 					break;
 				}
@@ -203,16 +233,26 @@ public class Tetris extends JPanel {
 			score += 800;
 			break;
 		}
+
+		return numClears;
 	}
 	
 	// Draw the falling piece
-	private void drawPiece(Graphics g) {		
+	public void drawPiece(Graphics g) {		
 		g.setColor(tetraminoColors[currentPiece]);
 		for (Point p : Tetraminos[currentPiece][rotation]) {
 			g.fillRect((p.x + pieceOrigin.x) * 26, 
 					   (p.y + pieceOrigin.y) * 26, 
 					   25, 25);
 		}
+	}
+
+	// true: ゲーム終了
+	private boolean gameOver = false;
+	
+	// ゲーム終了か判定
+	public boolean isGameOver(){
+		return gameOver;
 	}
 	
 	@Override 
@@ -231,60 +271,17 @@ public class Tetris extends JPanel {
 		g.setColor(Color.WHITE);
 		g.drawString("" + score, 19*12, 25);
 		
+		if(collidesAt(5, 4, rotation)){
+			Font font1 = new Font("ＭＳ 明朝", Font.BOLD, 32);
+			g.setColor(Color.WHITE);
+			g.setFont(font1);
+			g.drawString("GAME OVER", 5*10, 300);
+			gameOver = true;
+		}
+		
 		// Draw the currently falling piece
 		drawPiece(g);
 	}
 
-	public static void main(String[] args) {
-		JFrame f = new JFrame("Tetris");
-		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setSize(12*26+10, 26*23+25);
-		f.setVisible(true);
-		
-		final Tetris game = new Tetris();
-		game.init();
-		f.add(game);
-		
-		// Keyboard controls
-		f.addKeyListener(new KeyListener() {
-			public void keyTyped(KeyEvent e) {
-			}
-			
-			public void keyPressed(KeyEvent e) {
-				switch (e.getKeyCode()) {
-				case KeyEvent.VK_UP:
-					game.rotate(-1);
-					break;
-				case KeyEvent.VK_DOWN:
-					game.rotate(+1);
-					break;
-				case KeyEvent.VK_LEFT:
-					game.move(-1);
-					break;
-				case KeyEvent.VK_RIGHT:
-					game.move(+1);
-					break;
-				case KeyEvent.VK_SPACE:
-					game.dropDown();
-					game.score += 1;
-					break;
-				} 
-			}
-			
-			public void keyReleased(KeyEvent e) {
-			}
-		});
-		
-		// Make the falling piece drop every second
-		new Thread() {
-			@Override public void run() {
-				while (true) {
-					try {
-						Thread.sleep(1000);
-						game.dropDown();
-					} catch ( InterruptedException e ) {}
-				}
-			}
-		}.start();
-	}
+	
 }
