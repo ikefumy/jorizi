@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 class ClientProcThread extends Thread{
     private int number;
+	private Socket incoming;
+	private InputStreamReader myIsr;
 	private BufferedReader myIn;
 	private PrintWriter myOut;
 
@@ -152,7 +154,8 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
 		member = 0;
         
 		try {
-            ServerSocket server = new ServerSocket(10000);
+            ServerSocket server = new ServerSocket();
+	    server.bind(new InetSocketAddress("192.168.0.162", 8080));//サーバー側のPCのIPアドレス
             System.out.println("The server has launched!");
 			while (true) {
 				incoming[n] = server.accept();
