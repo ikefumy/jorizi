@@ -4,15 +4,17 @@ import java.net.*;
 import javax.swing.*;
 import java.lang.*;
 import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Graphics;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MyClient extends JFrame {
 	private Container c;
+    private int player_number;
 	PrintWriter out;
-	public int mypattern;
-	public static Tetris game;
+	public static FallPieceThread fpt;
 
     public MyClient() {
 		setTitle("Player");
@@ -21,66 +23,10 @@ public class MyClient extends JFrame {
 		setSize(12*26+10, 26*23+25);
 		c = getContentPane();
 
-		game = new Tetris();
+		Tetris game = new Tetris();
 		game.init();
 		c.add(game);
 
-        addKeyListener(new KeyListener() {
-			public void keyTyped(KeyEvent e1) {
-				if(mypattern == 1){
-				switch (e1.getKeyChar()) {
-					case 'w':
-						game.rotate(-1);
-						break;
-					case 'e':
-						game.rotate(+1);
-						break;
-					case 'a':
-						game.move(-1);
-						break;
-					case 'd':
-						game.move(+1);
-						break;
-					case 's':
-						int numClears = game.dropDown();
-						game.score += 1;
-						out.println(numClears);
-						out.flush();
-						break;
-					
-					}
-				}
-			if(mypattern == 2){
-				switch (e1.getKeyChar()) {
-				case 'i':
-					game.rotate(-1);
-					break;
-				case 'o':
-					game.rotate(+1);
-					break;
-				case 'j':
-					game.move(-1);
-					break;
-				case 'l':
-					game.move(+1);
-					break;
-				case 'k':
-					int numClears = game.dropDown();
-					game.score += 1;
-					out.println(numClears);
-					out.flush();
-					break;
-			}
-			}
-			}			
-			public void keyPressed(KeyEvent e1) {
-			}
-			
-			public void keyReleased(KeyEvent e1) {
-			}
-		});
-
-        
         Socket socket = null;
         try {
 			socket = new Socket("localhost", 10000);
@@ -89,41 +35,167 @@ public class MyClient extends JFrame {
 		} catch (IOException e) {
 			 System.err.println("IOException: " + e);
 		}
-		
-        MesgRecvThread mrt = new MesgRecvThread(socket, game);
+        try {
+            InputStreamReader sisr = new InputStreamReader(socket.getInputStream());
+            BufferedReader br = new BufferedReader(sisr);
+            String num = br.readLine();
+            player_number = Integer.valueOf(num);
+            System.out.println("your player number is " + player_number);;
+        } catch (IOException e) {
+			System.err.println("IOException: " + e);
+        }
+        MesgRecvThread mrt = new MesgRecvThread(socket, game, player_number);
+        fpt = new FallPieceThread(game, 1000);
 		mrt.start();
+        fpt.start();
     }
 
+    // ミノを毎秒降下させるためのスレッド
+    public class FallPieceThread extends Thread {
+        Tetris game;
+		int dropInterval;
+		private boolean running = true;
+
+        public FallPieceThread(Tetris g, int interval) {
+            game = g;
+			dropInterval = interval;
+        }
+
+        public void run() {
+            while (running) {
+                // Make the falling piece drop every second
+                try{
+                    Thread.sleep(dropInterval);
+                    int numClears = game.dropDown();
+                    out.println(numClears);
+                }catch (InterruptedException e){
+                    System.err.println("InterruptedException: " + e);
+                }
+            }
+        }
+
+		public void stopRunning(){
+			running = false;
+		}
+    }
+
+    // サーバーからの入力に応じてテトリスを動かすスレッド
     public class MesgRecvThread extends Thread {
         Socket socket;
         Tetris game;
-		byte[] data = new byte[1024];
-		public static int num;
+        int num;
+		boolean fevermode1 = true;
+		boolean fevermode2 = true;
 
-		public MesgRecvThread(Socket s, Tetris g){
+		
+		public MesgRecvThread(Socket s, Tetris g, int number){
 			socket = s;
             game = g;
+            num = number;
 		}
-		
 		
 		public void run() {
 			try{
 				InputStreamReader sisr = new InputStreamReader(socket.getInputStream());
 				BufferedReader br = new BufferedReader(sisr);
 				out = new PrintWriter(socket.getOutputStream(), true);
-				String myNumberStr = br.readLine();
-				int myNumberInt = Integer.parseInt(myNumberStr);
-				if (myNumberInt % 2 == 1){
-					mypattern = 1;
-				}else{
-					mypattern = 2;
-				}
 				while(true){
-
-
 					String inputLine = br.readLine();
 					if(inputLine != null){
-						System.out.println("inputLine: " + inputLine);
+                        // inputLineが数字 -> その数分妨害ブロック行を追加
+                        if(checkString(inputLine)){
+                            try{
+                                int inputLineInt = Integer.parseInt(inputLine);
+                                game.addRow(inputLineInt);
+                            }
+                            catch (NumberFormatException e){
+                                e.printStackTrace();
+                            }
+                        }
+                        // inputLineが文字列 -> キーボード入力に従ってミノを操作
+                        else{
+                            System.out.println("inputLine: " + inputLine);
+                            if (num % 2 == 0) {
+                                switch (inputLine) {
+                                    case "w" :
+                                        game.rotate(-1);
+                                        break;
+                                    case "e":
+                                        game.rotate(+1);
+                                        break;
+                                    case "a":
+                                        game.move(-1);
+                                        break;
+                                    case "d":
+                                        game.move(+1);
+                                        break;
+                                    case "s":
+                                        int numClears = game.dropDown();
+                                        game.score += 1;
+                                        out.println(numClears);
+                                        out.flush();
+                                        break;
+				    case "u":
+								if(fevermode2){
+											fpt.stopRunning();
+
+											FallPieceThread fpt1 = new FallPieceThread(game, 500);
+										    fpt1.start();
+											fevermode2 = false;
+											
+											TimerTask task = new TimerTask() {
+												public void run(){
+													fpt1.stopRunning();
+													FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+													fpt2.start();
+												}
+											};
+											Timer timer = new Timer();
+											timer.schedule(task, 30000);
+											
+										}
+
+                                }
+                            } else {
+                                switch (inputLine) {
+                                    case "i" :
+                                        game.rotate(-1);
+                                        break;
+                                    case "o":
+                                        game.rotate(+1);
+                                        break;
+                                    case "j":
+                                        game.move(-1);
+                                        break;
+                                    case "l":
+                                        game.move(+1);
+                                        break;
+                                    case "k":
+                                        int numClears = game.dropDown();
+                                        game.score += 1;
+                                        out.println(numClears);
+                                        out.flush();
+                                        break;
+									case "q":
+									    if(fevermode1){
+											fpt.stopRunning();
+											FallPieceThread fpt1 = new FallPieceThread(game, 500);
+										    fpt1.start();
+											fevermode1 = false;
+											
+											TimerTask task = new TimerTask() {
+												public void run(){
+													fpt1.stopRunning();
+													FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+													fpt2.start();
+												}
+											};
+											Timer timer = new Timer();
+											timer.schedule(task, 30000);
+										}
+                                }
+                            }
+                        }
 					}else{
 						break;
 					}
@@ -134,25 +206,22 @@ public class MyClient extends JFrame {
 				System.err.println("IOException: " + e);
 			}
         }
+
+        // 文字列が数字であるか判定
+        public static boolean checkString(String str) {
+            boolean res = true;
+            Pattern pattern = Pattern.compile("^[0-9]+$|-[0-9]+$");
+            res = pattern.matcher(str).matches();
+            return res;
+        }
     }
 
     public static void main(String[] args) {
         MyClient net = new MyClient();
         net.setVisible(true);
-		new Thread() {
-			@Override public void run() {
-				while (true) {
-					try {
-						Thread.sleep(1000);
-						game.dropDown();
-					} catch ( InterruptedException e ) {}
-				}
-			}
-		}.start();
     }
     
 }
-
 
 
 
