@@ -89,8 +89,10 @@ public class Tetris extends JPanel {
 		well = new Color[12][24];
 		for (int i = 0; i < 12; i++) {
 			for (int j = 0; j < 23; j++) {
-				if (i == 0 || i == 11 || j == 22) {
+	            if (i == 0 || i == 11 || j == 22) {
 					well[i][j] = Color.GRAY;
+				}else if(j == 3){
+					well[i][j] = Color.MAGENTA;
 				} else {
 					well[i][j] = Color.BLACK;
 				}
@@ -101,7 +103,7 @@ public class Tetris extends JPanel {
 	
 	// Put a new, random piece into the dropping position
 	public void newPiece() {
-		pieceOrigin = new Point(5, 2); // 落下地点
+		pieceOrigin = new Point(5, 0); // 落下地点
 		rotation = 0;
 		// ランダムに複数のミノを決定
 		if (nextPieces.isEmpty()) {
@@ -115,7 +117,7 @@ public class Tetris extends JPanel {
 	// Collision test for the dropping piece
 	public boolean collidesAt(int x, int y, int rotation) {
 		for (Point p : Tetraminos[currentPiece][rotation]) {
-			if (well[p.x + x][p.y + y] != Color.BLACK) {
+			if (well[p.x + x][p.y + y] != Color.BLACK && well[p.x + x][p.y + y] != Color.MAGENTA ) {
 				return true;
 			}
 		}
@@ -205,7 +207,7 @@ public class Tetris extends JPanel {
 		for (int j = 21; j > 0; j--) {
 			gap = false;
 			for (int i = 1; i < 11; i++) {
-				if (well[i][j] == Color.BLACK) {
+				if (well[i][j] == Color.BLACK || well[i][j] == Color.MAGENTA) {
 					gap = true;
 					break;
 				}
