@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import java.util.Timer;
 import java.util.TimerTask;
 
+
 public class MyClient extends JFrame {
 	private Container c;
     private int player_number;
@@ -26,7 +27,7 @@ public class MyClient extends JFrame {
 
         Socket socket = null;
         try {
-			socket = new Socket("localhost", 10000);
+			socket = new Socket("192.168.0.162", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
@@ -233,7 +234,7 @@ public class MyClient extends JFrame {
         }
 
         // 文字列が数字であるか判定
-        public static boolean checkString(String str) {
+        public boolean checkString(String str) {
             boolean res = true;
             Pattern pattern = Pattern.compile("^[0-9]+$|-[0-9]+$");
             res = pattern.matcher(str).matches();
