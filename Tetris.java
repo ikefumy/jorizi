@@ -165,7 +165,7 @@ public class Tetris extends JPanel {
 	}
 	
 	public void deleteRow(int row) {
-		for (int j = row-1; j > 0; j--) {
+		for (int j = row-1; j > 3; j--) {
 			for (int i = 1; i < 11; i++) {
 				well[i][j+1] = well[i][j];
 			}
@@ -177,7 +177,7 @@ public class Tetris extends JPanel {
 		int blank = (int)Math.ceil(Math.random() * 10); // ブロックを置かない場所
 		for (int k = 0 ; k < numRow ; k++ ) {
 			// 全体的に一つ上にずらす
-			for (int j = 2; j <= 21; j++) {
+			for (int j = 5; j <= 21; j++) {
 				for (int i = 1; i < 11; i++) {
 					well[i][j-1] = well[i][j];
 				}
