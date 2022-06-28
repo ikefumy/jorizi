@@ -26,7 +26,7 @@ public class MyClient extends JFrame {
 		game.init();
 		c.add(game);
         
-        //クライアントからの入力
+        //クライアントからの入力　
         addKeyListener(new KeyListener() {
 			public void keyTyped(KeyEvent e1) {
 				switch (e1.getKeyChar()) {
