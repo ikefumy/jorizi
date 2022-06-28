@@ -63,7 +63,7 @@ public class MyClient extends JFrame {
    
         Socket socket = null;
         try {
-			socket = new Socket("10.9.85.24", 8080);
+			socket = new Socket("192.168.0.162", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
