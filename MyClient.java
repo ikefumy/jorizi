@@ -26,7 +26,7 @@ public class MyClient extends JFrame {
 		game.init();
 		c.add(game);
         
-        //クライアントからの入力　
+        //クライアントからの入力
         addKeyListener(new KeyListener() {
 			public void keyTyped(KeyEvent e1) {
 				switch (e1.getKeyChar()) {
@@ -50,7 +50,7 @@ public class MyClient extends JFrame {
                             break;
                     case 'u':
                     //fevermode
-			} 
+				} 
 			}
 			
 			public void keyPressed(KeyEvent e1) {
@@ -63,7 +63,7 @@ public class MyClient extends JFrame {
    
         Socket socket = null;
         try {
-			socket = new Socket("192.168.0.162", 8080);
+			socket = new Socket("127.0.0.1", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
@@ -114,9 +114,13 @@ public class MyClient extends JFrame {
             dropInterval = interval;
         }
 
+    
         public void run() {
             while (running) {
-                boolean flag = gameStart && !gameEnd;
+                boolean flag = gameStart && !gameEnd ;
+                if(!flag){
+                    System.out.println("Push start");
+                }
                 if(flag){
                     // Make the falling piece drop every second
                     try{
