@@ -7,6 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import java.awt.event.*;
+import java.beans.FeatureDescriptor;
 
 public class MyClient extends JFrame {
 	private Container c;
@@ -15,20 +16,13 @@ public class MyClient extends JFrame {
     private boolean gameStart = false;
     private boolean gameEnd = false;
     Socket socket = null;
+    boolean fevermode = true;
+    boolean TripleSpeedFlag = false;
 
     public MyClient() {
-		setTitle("Player");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setLocation(200, 200);
-		setSize(12*26+10, 26*23+25);
-		c = getContentPane();
-
-		Tetris game = new Tetris();
-		game.init();
-		c.add(game);
         
         try {
-			socket = new Socket("192.168.1.18", 8080);
+			socket = new Socket("192.168.1.2", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
@@ -43,6 +37,17 @@ public class MyClient extends JFrame {
         } catch (IOException e) {
 			System.err.println("IOException: " + e);
         }
+        
+        setTitle("Player" + player_number);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocation(200, 200);
+		setSize(12*26+10, 26*23+25);
+		c = getContentPane();
+        
+		Tetris game = new Tetris();
+		game.init();
+		c.add(game);
+
 
         CheckGameOver cgo = new CheckGameOver(game);
         FallPieceThread fpt = new FallPieceThread(game, 1000);
@@ -74,11 +79,14 @@ public class MyClient extends JFrame {
                             out.flush();
                             break;
                     case 'u':
-                            try {
-                                out = new PrintWriter(socket.getOutputStream(), true);
-                                out.println("fev");                            
-                            } catch (IOException e) {
-                                System.err.println("IOException: " + e);
+                            if(fevermode && !TripleSpeedFlag){
+                                try {
+                                    out = new PrintWriter(socket.getOutputStream(), true);
+                                    out.println("fev");
+                                    fevermode = false;                            
+                                } catch (IOException e) {
+                                    System.err.println("IOException: " + e);
+                                }
                             }
 				} 
 			}
@@ -144,15 +152,17 @@ public class MyClient extends JFrame {
         }
     }
 
+
     // サーバーからの入力に応じてテトリスを動かすスレッド
     public class MesgRecvThread extends Thread {
         Socket socket;
         Tetris game;
         int num;
         FallPieceThread fpt;
-        boolean fevermode = true;
 		boolean fevermode1 = true;
 		boolean fevermode2 = true;
+        FeverMessage fm = new FeverMessage();
+        
 		
 		public MesgRecvThread(Socket s, Tetris g, int number, FallPieceThread f){
 			socket = s;
@@ -212,40 +222,16 @@ public class MyClient extends JFrame {
                                             out.flush();
                                             break;
                                         case "u":
-                                            if(fevermode2){
-                                                fpt.stopRunning();
-                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
-                                                fpt1.start();
+                                            if(fevermode2 && !TripleSpeedFlag){
                                                 fevermode2 = false;
-                                                TimerTask task = new TimerTask() {
-                                                    public void run(){
-                                                        fpt1.stopRunning();
-                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
-                                                        fpt2.start();
-                                                    }
-                                                };
-                                                Timer timer = new Timer();
-                                                timer.schedule(task, 30000);
+                                                TripleSpeedFlag = true;
+                                                TripleSpeedFall dsf = new TripleSpeedFall(fpt, game, fm);
                                             }
                                             break;
                                         case "fev":
-                                            if(fevermode){
-                                                fpt.stopRunning();
-                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
-                                                fpt1.start();
-                                                fevermode = false;
-                                                TimerTask task = new TimerTask() {
-                                                    public void run(){
-                                                        fpt1.stopRunning();
-                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
-                                                        fpt2.start();
-                                                    }
-                                                };
-                                                Timer timer = new Timer();
-                                                timer.schedule(task, 30000);
-                                            }
-                                            break;
-                                            
+                                                TripleSpeedFlag = true;
+                                                TripleSpeedFall dsf = new TripleSpeedFall(fpt, game, fm);
+                                                break;      
                                     }
                                 } else {
                                     switch (inputLine) {
@@ -268,39 +254,15 @@ public class MyClient extends JFrame {
                                             out.flush();
                                             break;
                                         case "q":
-                                            if(fevermode){
-                                                fpt.stopRunning();
-                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
-                                                fpt1.start();
-                                                fevermode = false;
-                                                
-                                                TimerTask task = new TimerTask() {
-                                                    public void run(){
-                                                        fpt1.stopRunning();
-                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
-                                                        fpt2.start();
-                                                    }
-                                                };
-                                                Timer timer = new Timer();
-                                                timer.schedule(task, 30000);
+                                            if(fevermode1 && !TripleSpeedFlag){
+                                                fevermode1 = false;
+                                                TripleSpeedFlag = true;
+                                                TripleSpeedFall dsf = new TripleSpeedFall(fpt, game, fm);
                                             }
                                             break;
                                         case "fev":
-                                            if(fevermode){
-                                                fpt.stopRunning();
-                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
-                                                fpt1.start();
-                                                fevermode = false;
-                                                TimerTask task = new TimerTask() {
-                                                    public void run(){
-                                                        fpt1.stopRunning();
-                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
-                                                        fpt2.start();
-                                                    }
-                                                };
-                                                Timer timer = new Timer();
-                                                timer.schedule(task, 30000);
-                                            }
+                                            TripleSpeedFlag = true;
+                                            TripleSpeedFall dsf = new TripleSpeedFall(fpt, game, fm);
                                             break;
                                     }
                                 }
@@ -322,6 +284,86 @@ public class MyClient extends JFrame {
             return res;
         }
     }
+
+    //3倍速落下
+    public class TripleSpeedFall{
+        int count = 0;
+        public TripleSpeedFall(FallPieceThread fpt, Tetris game, FeverMessage fm){
+            fpt.stopRunning();
+            fm.feverVisible(TripleSpeedFlag);
+            FallPieceThread fpt1 = new FallPieceThread(game, 333);
+            fpt1.start();
+            TimerTask task1 = new TimerTask() {
+                public void run(){
+                    fpt1.stopRunning();
+                    FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+                    fpt2.start();
+                    TripleSpeedFlag = false;
+                    fm.feverVisible(TripleSpeedFlag);
+                }
+            };
+            TimerTask task2 = new TimerTask(){
+                public void run(){
+                    fm.timebar(count);
+                    count++;
+                }
+            };
+            Timer timer = new Timer();
+            timer.schedule(task1, 30000);
+            timer.schedule(task2, 0, 1000);
+
+        }
+    }
+    
+    //ferverメッセージの表示
+    public class FeverMessage extends JFrame{
+        Container c;
+        JProgressBar bar = new JProgressBar(0,29);;
+        
+        public FeverMessage(){
+
+            this.setTitle("FerverMode");
+            this.setSize(400, 200);
+            this.setLocationRelativeTo(null);
+            this.c = getContentPane();
+            JPanel labelPanel = new JPanel();
+            JPanel labelPanel2 = new JPanel();
+            
+            JLabel l = new JLabel("Fever Mode!!");        
+            l.setFont(new Font("Arial", Font.PLAIN, 50));
+            l.setForeground(Color.RED);
+            
+            JLabel l2 = new JLabel("Show remaining time");        
+            l2.setFont(new Font("Arial", Font.PLAIN, 25));
+            l2.setForeground(Color.BLACK);
+
+            labelPanel.add(l);
+            c.add(labelPanel, BorderLayout.PAGE_START);
+
+            labelPanel2.add(l2);
+            c.add(labelPanel2, BorderLayout.PAGE_END);
+
+            UIManager.put("ProgressBar.foreground", Color.WHITE);
+		    UIManager.put("ProgressBar.background", Color.BLUE);
+            bar.setForeground(Color.WHITE);
+            bar.setBackground(Color.BLUE);
+
+            bar.setValue(0);
+            JPanel barPanel = new JPanel();
+            barPanel.add(bar);
+            c.add(barPanel, BorderLayout.CENTER);
+
+        }
+
+        public void feverVisible(boolean flag){
+            this.setVisible(flag);
+        }
+
+        public void timebar(int count){
+            bar.setValue(count);
+        }
+    }
+
 
     public static void main(String[] args) {
         MyClient net = new MyClient();
