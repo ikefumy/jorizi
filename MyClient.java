@@ -14,6 +14,7 @@ public class MyClient extends JFrame {
 	PrintWriter out;
     private boolean gameStart = false;
     private boolean gameEnd = false;
+    Socket socket = null;
 
     public MyClient() {
 		setTitle("Player");
@@ -26,44 +27,8 @@ public class MyClient extends JFrame {
 		game.init();
 		c.add(game);
         
-        //クライアントからの入力
-        addKeyListener(new KeyListener() {
-			public void keyTyped(KeyEvent e1) {
-				switch (e1.getKeyChar()) {
-					case 'i' :
-                            game.rotate(-1);
-                            break;
-                    case 'o':
-                            game.rotate(+1);
-                            break;
-                    case 'j':
-                            game.move(-1);
-                            break;
-                    case 'l':
-                            game.move(+1);
-                            break;
-                    case 'k':
-                            int numClears = game.dropDown();
-                            game.score += 1;
-                            out.println(numClears);
-                            out.flush();
-                            break;
-                    case 'u':
-                    //fevermode
-				} 
-			}
-			
-			public void keyPressed(KeyEvent e1) {
-			}
-			
-			public void keyReleased(KeyEvent e1) {
-			}
-		});
-
-   
-        Socket socket = null;
         try {
-			socket = new Socket("127.0.0.1", 8080);
+			socket = new Socket("192.168.1.18", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
@@ -85,7 +50,47 @@ public class MyClient extends JFrame {
         cgo.start();
         fpt.start();
         mrt.start();
+
+         //クライアントからの入力
+         addKeyListener(new KeyListener() {
+			public void keyTyped(KeyEvent e1) {
+				switch (e1.getKeyChar()) {
+					case 'i' :
+                            game.rotate(-1);
+                            break;
+                    case 'o':
+                            game.rotate(+1);
+                            break;
+                    case 'j':
+                            game.move(-1);
+                            break;
+                    case 'l':
+                            game.move(+1);
+                            break;
+                    case 'k':
+                            int numClears = game.dropDown();
+                            game.score += 1;
+                            out.println(numClears);
+                            out.flush();
+                            break;
+                    case 'u':
+                            try {
+                                out = new PrintWriter(socket.getOutputStream(), true);
+                                out.println("fev");                            
+                            } catch (IOException e) {
+                                System.err.println("IOException: " + e);
+                            }
+				} 
+			}
+			
+			public void keyPressed(KeyEvent e1) {
+			}
+			
+			public void keyReleased(KeyEvent e1) {
+			}
+		});
     }
+
 
     public class CheckGameOver extends Thread {
         Tetris game;
@@ -145,6 +150,7 @@ public class MyClient extends JFrame {
         Tetris game;
         int num;
         FallPieceThread fpt;
+        boolean fevermode = true;
 		boolean fevermode1 = true;
 		boolean fevermode2 = true;
 		
@@ -222,6 +228,24 @@ public class MyClient extends JFrame {
                                                 timer.schedule(task, 30000);
                                             }
                                             break;
+                                        case "fev":
+                                            if(fevermode){
+                                                fpt.stopRunning();
+                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
+                                                fpt1.start();
+                                                fevermode = false;
+                                                TimerTask task = new TimerTask() {
+                                                    public void run(){
+                                                        fpt1.stopRunning();
+                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+                                                        fpt2.start();
+                                                    }
+                                                };
+                                                Timer timer = new Timer();
+                                                timer.schedule(task, 30000);
+                                            }
+                                            break;
+                                            
                                     }
                                 } else {
                                     switch (inputLine) {
@@ -244,12 +268,29 @@ public class MyClient extends JFrame {
                                             out.flush();
                                             break;
                                         case "q":
-                                            if(fevermode1){
+                                            if(fevermode){
                                                 fpt.stopRunning();
                                                 FallPieceThread fpt1 = new FallPieceThread(game, 500);
                                                 fpt1.start();
-                                                fevermode1 = false;
+                                                fevermode = false;
                                                 
+                                                TimerTask task = new TimerTask() {
+                                                    public void run(){
+                                                        fpt1.stopRunning();
+                                                        FallPieceThread fpt2 = new FallPieceThread(game, 1000);
+                                                        fpt2.start();
+                                                    }
+                                                };
+                                                Timer timer = new Timer();
+                                                timer.schedule(task, 30000);
+                                            }
+                                            break;
+                                        case "fev":
+                                            if(fevermode){
+                                                fpt.stopRunning();
+                                                FallPieceThread fpt1 = new FallPieceThread(game, 500);
+                                                fpt1.start();
+                                                fevermode = false;
                                                 TimerTask task = new TimerTask() {
                                                     public void run(){
                                                         fpt1.stopRunning();
