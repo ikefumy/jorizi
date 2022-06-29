@@ -14,6 +14,7 @@ class ClientProcThread extends Thread{
 	private InputStreamReader myIsr;
 	private BufferedReader myIn;
 	private PrintWriter myOut;
+	String fever = "fev";
 
 	public ClientProcThread(int n, Socket i, InputStreamReader isr, BufferedReader in, PrintWriter out) {
 		number = n;
@@ -38,8 +39,9 @@ class ClientProcThread extends Thread{
 					// strが数字の場合（削除した列数）はもう一方の相手にだけ送信する
 					if(checkString(str)){
 						MyServer.SendOther(str, number);
-					}
-					else{
+					}else if(str.equals(fever)){
+						MyServer.SendOther(str, number);
+					}else{
 						MyServer.SendAll(str);
 					}
 				}
@@ -155,7 +157,8 @@ public class MyServer extends JFrame implements ActionListener, KeyListener {
         
 		try {
             ServerSocket server = new ServerSocket();
-	    server.bind(new InetSocketAddress("192.168.0.162", 8080));//サーバー側のPCのIPアドレス
+			InetAddress addr = InetAddress.getLocalHost();
+	    server.bind(new InetSocketAddress(addr, 8080));//サーバー側のPCのIPアドレス
             System.out.println("The server has launched!");
 			while (true) {
 				incoming[n] = server.accept();
