@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import java.awt.event.*;
 
 public class MyClient extends JFrame {
 	private Container c;
@@ -24,10 +25,45 @@ public class MyClient extends JFrame {
 		Tetris game = new Tetris();
 		game.init();
 		c.add(game);
+        
+        //クライアントからの入力
+        addKeyListener(new KeyListener() {
+			public void keyTyped(KeyEvent e1) {
+				switch (e1.getKeyChar()) {
+					case 'i' :
+                            game.rotate(-1);
+                            break;
+                    case 'o':
+                            game.rotate(+1);
+                            break;
+                    case 'j':
+                            game.move(-1);
+                            break;
+                    case 'l':
+                            game.move(+1);
+                            break;
+                    case 'k':
+                            int numClears = game.dropDown();
+                            game.score += 1;
+                            out.println(numClears);
+                            out.flush();
+                            break;
+                    case 'u':
+                    //fevermode
+				} 
+			}
+			
+			public void keyPressed(KeyEvent e1) {
+			}
+			
+			public void keyReleased(KeyEvent e1) {
+			}
+		});
 
+   
         Socket socket = null;
         try {
-		socket = new Socket("192.168.0.162", 8080);//サーバー側のPCのIPアドレスを使う
+			socket = new Socket("127.0.0.1", 8080);
 		} catch (UnknownHostException e) {
 			System.err.println("UnknownHostException: " + e);
 		} catch (IOException e) {
@@ -78,9 +114,13 @@ public class MyClient extends JFrame {
             dropInterval = interval;
         }
 
+    
         public void run() {
             while (running) {
-                boolean flag = gameStart && !gameEnd;
+                boolean flag = gameStart && !gameEnd ;
+                if(!flag){
+                    System.out.println("Push start");
+                }
                 if(flag){
                     // Make the falling piece drop every second
                     try{
